@@ -1,4 +1,7 @@
 // use crate::add_movie::add_new_movie;
+use crate::footer::create_footer;
+use crate::header::create_header;
+
 use crate::movie::{filter_and_pick_movie, Movie};
 use crossterm::{
     event::{self, EnableMouseCapture, DisableMouseCapture, Event, KeyCode},
@@ -55,9 +58,6 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
     let mut terminal = setup_terminal()?;
     // let mut terminal = Terminal::new(backend)?;
 
-    // Load the ASCII art header
-    let header_text = load_header("Data/header_two.txt");
-
     let categories = vec![
         "comedy",
         "drama",
@@ -108,27 +108,19 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
                 ])
                 .split(size);
 
-            // Add a colorful header
             // let header = Paragraph::new(header_text.clone())
-            //     .block(Block::default().borders(Borders::ALL).title(""))
-            //     .style(
-            //         Style::default()
-            //             .fg(Color::White)
-            //             .bg(Color::Magenta) // Background color
-            //             .add_modifier(Modifier::BOLD),
+            //     .block(
+            //         Block::default().borders(Borders::ALL).title(Span::styled(
+            //             "V + L Movie Selector",
+            //             Style::default()
+            //                 .fg(Color::Yellow)
+            //                 .add_modifier(Modifier::BOLD),
+            //         )),
             //     )
+            //     .style(Style::default().bg(Color::Magenta))
             //     .alignment(Alignment::Center);
-            let header = Paragraph::new(header_text.clone())
-                .block(
-                    Block::default().borders(Borders::ALL).title(Span::styled(
-                        "V + L Movie Selector",
-                        Style::default()
-                            .fg(Color::Yellow)
-                            .add_modifier(Modifier::BOLD),
-                    )),
-                )
-                .style(Style::default().bg(Color::Magenta))
-                .alignment(Alignment::Center);
+            
+            let header = create_header();
             f.render_widget(header, chunks[0]);
 
             // Display total movies count
@@ -203,10 +195,7 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
             f.render_widget(result_paragraph, chunks[3]);
 
             // Footer Section
-            let footer = Paragraph::new("Press 'h' for Help | 'q' to Quit")
-                .block(Block::default().borders(Borders::ALL).title("Footer"))
-                .style(Style::default().fg(Color::White).bg(Color::DarkGray))
-                .alignment(Alignment::Center);
+            let footer = create_footer();
             f.render_widget(footer, chunks[4]);
         })?;
 

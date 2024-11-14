@@ -1,6 +1,8 @@
 mod movie;
 mod ui;
 mod add_movie;
+mod footer;
+mod header;
 
 use ui::run_ui;
 use movie::load_movies_from_json;
