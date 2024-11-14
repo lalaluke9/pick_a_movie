@@ -1,11 +1,12 @@
 // use crate::add_movie::add_new_movie;
 use crate::movie::{filter_and_pick_movie, Movie};
 use crossterm::{
+    event::{self, EnableMouseCapture, DisableMouseCapture, Event, KeyCode},
     execute,
-    event::{self, Event, KeyCode, EnableMouseCapture},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
+use ratatui::backend::ClearType;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
@@ -17,9 +18,9 @@ use ratatui::{
     layout::Alignment,
     text::{Span, Text},
 };
+use std::error::Error;
 use std::fs;
 use std::io::{self, stdout};
-use std::error::Error;
 
 
 fn clear_terminal() {
@@ -61,9 +62,26 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
     let header_text = load_header("Data/header_two.txt");
 
     let categories = vec![
-        "comedy", "drama", "sci-fi", "thriller", "romance", "adventure", "show", "anime", "cartoon",
-        "horror", "action", "fantasy", "documentary", "musical", "mystery", "western", "war",
-        "crime", "biography", "nick cage",
+        "comedy",
+        "drama",
+        "sci-fi",
+        "thriller",
+        "romance",
+        "adventure",
+        "show",
+        "anime",
+        "cartoon",
+        "horror",
+        "action",
+        "fantasy",
+        "documentary",
+        "musical",
+        "mystery",
+        "western",
+        "war",
+        "crime",
+        "biography",
+        "nick cage",
     ];
 
     let mut list_state = ListState::default();
@@ -89,18 +107,30 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
                     Constraint::Length(3),      // Total movies count
                     Constraint::Percentage(40), // Categories list
                     Constraint::Percentage(50), // Selected movie details
+                    Constraint::Length(3),      // Footer
                 ])
                 .split(size);
 
             // Add a colorful header
+            // let header = Paragraph::new(header_text.clone())
+            //     .block(Block::default().borders(Borders::ALL).title(""))
+            //     .style(
+            //         Style::default()
+            //             .fg(Color::White)
+            //             .bg(Color::Magenta) // Background color
+            //             .add_modifier(Modifier::BOLD),
+            //     )
+            //     .alignment(Alignment::Center);
             let header = Paragraph::new(header_text.clone())
-                .block(Block::default().borders(Borders::ALL).title(""))
-                .style(
-                    Style::default()
-                        .fg(Color::White)
-                        .bg(Color::Magenta) // Background color
-                        .add_modifier(Modifier::BOLD),
+                .block(
+                    Block::default().borders(Borders::ALL).title(Span::styled(
+                        "V + L Movie Selector",
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    )),
                 )
+                .style(Style::default().bg(Color::Magenta))
                 .alignment(Alignment::Center);
             f.render_widget(header, chunks[0]);
 
@@ -118,7 +148,8 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
                 .map(|(i, c)| {
                     let style = if Some(i) == list_state.selected() {
                         Style::default()
-                            .fg(Color::Yellow)
+                            .fg(Color::Black)
+                            .bg(Color::Yellow)
                             .add_modifier(Modifier::BOLD)
                     } else {
                         Style::default().fg(Color::Green)
@@ -134,26 +165,52 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
             // Result Section
             let result_paragraph = if let Some(movie) = &display_movie {
                 let result_text = format!(
-                    "Title: {}\nWatched: {}\nRating: {}\nTags: {}\nCategories: {}",
+                    "{:<10} {}\n{:<10} {}\n{:<10} {}\n{:<10} {}\n{:<10} {}",
+                    "Title:",
                     movie.title,
-                    movie.watched.unwrap_or(false).then(|| "Yes").unwrap_or("No"),
+                    "Watched:",
+                    movie
+                        .watched
+                        .unwrap_or(false)
+                        .then(|| "Yes")
+                        .unwrap_or("No"),
+                    "Rating:",
                     movie.rating.clone().unwrap_or_else(|| "n/a".to_string()),
+                    "Tags:",
                     movie.tags.clone().unwrap_or_else(Vec::new).join(", "),
+                    "Categories:",
                     movie.categories.join(", ")
                 );
 
                 Paragraph::new(result_text)
-                    .block(Block::default().borders(Borders::ALL).title("Result"))
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("Result")
+                            .style(Style::default().fg(Color::Blue)), // Card-like border color
+                    )
                     .alignment(Alignment::Left)
                     .wrap(Wrap { trim: true })
-                    .style(Style::default().fg(Color::Cyan))
+                    .style(
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD), // Make the text bold
+                    )
             } else {
                 Paragraph::new("Press 'r' to select a random movie or 'a' to add a new one.")
                     .block(Block::default().borders(Borders::ALL).title("Result"))
                     .alignment(Alignment::Center)
                     .style(Style::default().fg(Color::White))
             };
+
             f.render_widget(result_paragraph, chunks[3]);
+
+            // Footer Section
+            let footer = Paragraph::new("Press 'h' for Help | 'q' to Quit")
+                .block(Block::default().borders(Borders::ALL).title("Footer"))
+                .style(Style::default().fg(Color::White).bg(Color::DarkGray))
+                .alignment(Alignment::Center);
+            f.render_widget(footer, chunks[4]);
         })?;
 
         // Handle user input
@@ -176,10 +233,57 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
                 KeyCode::Char('r') => {
                     if let Some(selected_index) = list_state.selected() {
                         let selected_category = categories[selected_index];
-                        selected_movie = filter_and_pick_movie(&immutable_movies, selected_category)
-                            .cloned();
+                        selected_movie =
+                            filter_and_pick_movie(&immutable_movies, selected_category).cloned();
                     }
                 }
+
+                KeyCode::Char('g') => {
+                    // Pick a random movie globally
+                    use rand::seq::SliceRandom;
+
+                    if let Some(movie) = immutable_movies.choose(&mut rand::thread_rng()) {
+                        selected_movie = Some(movie.clone()); // Clone to convert &Movie to Movie
+                    }
+                }
+
+                KeyCode::Char('h') => {
+                    let help_text = vec![
+                        "Key Bindings:",
+                        "  ↑ / ↓ : Navigate categories",
+                        "  r     : Random movie in selected category",
+                        "  g     : Global random movie",
+                        "  a     : Add a new movie",
+                        "  q     : Quit",
+                        "  h     : Show this help",
+                    ]
+                    .join("\n");
+
+                    // Temporarily display the help screen
+                    terminal.draw(|f| {
+                        let size = f.area(); // Get the full screen size
+                        let help_block = Paragraph::new(help_text)
+                            .block(
+                                Block::default()
+                                    .borders(Borders::ALL)
+                                    .title("Help")
+                                    .style(Style::default().fg(Color::Yellow)),
+                            )
+                            .alignment(Alignment::Left)
+                            .wrap(Wrap { trim: true });
+                        f.render_widget(help_block, size); // Render help text over the entire terminal
+                    })?;
+
+                    // Wait for user to press a key to exit help
+                    loop {
+                        if let Event::Key(key) = event::read()? {
+                            if key.code == KeyCode::Char('h') || key.code == KeyCode::Char('q') {
+                                break; // Exit the help screen when 'h' or 'q' is pressed
+                            }
+                        }
+                    }
+                }
+
                 KeyCode::Char('q') => {
                     disable_raw_mode()?;
                     break;
@@ -189,6 +293,14 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
         }
     }
 
+    // disable_raw_mode()?;
+    // Cleanup terminal
     disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
     Ok(())
 }
