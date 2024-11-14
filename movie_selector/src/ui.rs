@@ -6,7 +6,6 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
-use ratatui::backend::ClearType;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
@@ -16,11 +15,11 @@ use ratatui::{
 };
 use ratatui::{
     layout::Alignment,
-    text::{Span, Text},
+    text::Span,
 };
 use std::error::Error;
 use std::fs;
-use std::io::{self, stdout};
+use std::io::{self};
 
 
 fn clear_terminal() {
@@ -53,8 +52,6 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
     clear_terminal();
 
     enable_raw_mode()?;
-    let stdout = io::stdout();
-    let backend = CrosstermBackend::new(stdout);
     let mut terminal = setup_terminal()?;
     // let mut terminal = Terminal::new(backend)?;
 
