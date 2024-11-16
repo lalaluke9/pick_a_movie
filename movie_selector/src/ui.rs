@@ -100,7 +100,7 @@ pub fn run_ui(movies: &mut Vec<Movie>, json_file: &str) -> Result<(), Box<dyn st
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Length(8),      // Header
+                    Constraint::Length(12),      // Header
                     Constraint::Length(3),      // Total movies count
                     Constraint::Percentage(40), // Categories list
                     Constraint::Percentage(50), // Selected movie details

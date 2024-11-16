@@ -12,7 +12,7 @@ fn load_header(file_path: &str) -> String {
 
 pub fn create_header() -> Paragraph<'static> {
     // Load the ASCII art header
-    let header_text = load_header("Data/header_two.txt");
+    let header_text = load_header("Data/header_three.txt");
 
     Paragraph::new(header_text.to_string())
         .block(
